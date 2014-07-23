@@ -81,8 +81,49 @@ int main(int argc, char *argv[], char *argv[]){
     }
     else{
         printf("Server-->\n\8tGot Connection from : %s, port : %d, socked: %d\n", 
-               inet_ntoa(their));
+               inet_ntoa(their_addr.sin_addr), ntohs(their_addr.sin_port), new_fd);
     }
+    // ================New Thread To Process Client Msg================ //
+    if ((pid=fork()) == -1){
+        perror("fork() -> Created new thread for process client's quest failed.\n");
+        exit(EXIT_FIALURE);                           
+    }//if
+    else if(pid == 0){//child process - use to send msg
+        while(1){
+            bzero(buf, MAXBUFF+1);
+            printf("Please input message to send: ");
+            fgets(buf, MAXBUFF, stdin);
+            if(!strncasecmp(buf, "quit", 4)){
+                printf("I will close the connect.\n");
+                break;
+            }//if
+            len = send(new_fd, buf, strlen(buf)-1, 0);
+            if (len < 0){
+                printf("Message< %s >send failure! Errno code is: %d, errno msg is < %s >\n", 
+                       buf, errno, strerror(errno));
+                break;
+            }//if
+        }
+    }//else ..pid == 0..
+    else{
+        while(1){
+            bzero(bu MAXBUFF+1);
+            len = recv(new_fd, buf, MAXBUFF, 0);
+            if (len >0){
+                printf("Message recv successful:< %s >, %dBytes recv\n", buf, len);
+            }
+            else if (len < 0){
+                printf("Recv msg failure! Errno Code is: %d, errno msg is: < %s >\n", errno, strerror(errno));
+                break;
+            }
+            else{
+                printf("The other one close quit.\n");
+                break;
+            }
+        }
+    }//else ..pid != 0..
+    close(new_fd);
+    close(sockfd);    
 
     return 0;  
 }
